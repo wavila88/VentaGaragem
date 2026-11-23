@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Venda por mudança</title>
+<style>
+  :root{--bg:#f7f6f3;--card:#fff;--text:#1d1d1b;--muted:#6b6b66;--accent:#1f7a5a;--line:#e5e3dd;--sold:#b3261e;--res:#b26a00}
+  @media (prefers-color-scheme:dark){:root{--bg:#161614;--card:#21211f;--text:#f1f0ec;--muted:#a3a29b;--accent:#4fc79a;--line:#34342f}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  header,main{max-width:960px;margin:0 auto;padding:0 16px}
+  header{padding-top:28px;padding-bottom:8px}
+  h1{margin:0 0 6px;font-size:1.7rem}
+  .lead{color:var(--muted);margin:0 0 14px}
+  .rules{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;margin:0 0 16px;font-size:.95rem}
+  .rules ul{margin:6px 0 0;padding-left:18px}
+  .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+  .filters button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 14px;border-radius:99px;cursor:pointer;font:inherit;font-size:.9rem}
+  .filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding-bottom:40px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+  .wrap{position:relative}
+  .img{aspect-ratio:3/4;background:var(--line);display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:.9rem}
+  .img img{width:100%;height:100%;object-fit:contain;background:#fff}
+  .img.gal{overflow-x:auto;scroll-snap-type:x mandatory;justify-content:flex-start;scrollbar-width:thin}
+  .img.gal img{flex:0 0 100%;scroll-snap-align:center}
+  .count{position:absolute;right:10px;bottom:10px;background:rgba(0,0,0,.65);color:#fff;font-size:.75rem;padding:2px 8px;border-radius:99px;pointer-events:none}
+  .badge{position:absolute;top:10px;left:10px;color:#fff;font-size:.75rem;font-weight:600;padding:3px 10px;border-radius:99px}
+  .badge.reservado{background:var(--res)} .badge.vendido{background:var(--sold)}
+  .body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .body h2{margin:0;font-size:1.05rem}
+  .price{font-weight:700;font-size:1.15rem;color:var(--accent)}
+  .desc{margin:0;color:var(--muted);font-size:.9rem}
+  .btn{margin-top:auto;display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;padding:9px;border-radius:10px;font-weight:600}
+  .card.vendido .btn,.card.reservado .btn{background:var(--line);color:var(--muted);pointer-events:none}
+  .card.vendido{opacity:.55}
+  footer{text-align:center;color:var(--muted);font-size:.85rem;padding:0 16px 32px}
+</style>
+</head>
+<body>
+<header>
+  <h1>Venda por mudança</h1>
+  <p class="lead">Estamos nos mudando de país. Tudo está à venda e a retirada é a partir de <strong id="fecha"></strong>.</p>
+  <div class="rules">
+    <strong>Como funciona</strong>
+    <ul>
+      <li>Chame no WhatsApp para reservar o item.</li>
+      <li id="regla-sinal"></li>
+      <li>A retirada é por conta do comprador (móveis grandes são desmontados no local).</li>
+    </ul>
+  </div>
+  <div class="filters" id="filters"></div>
+</header>
+<main><div class="grid" id="grid"></div></main>
+<footer>Região: <span id="zona"></span></footer>
+
+<script>
+/* ===== EDITE AQUI ===== */
+const CONFIG = {
+  whatsapp: "5541999108050",      // código do país + DDD + número, sem + nem espaços
+  moeda: "R$ ",
+  fechaRetiro: "10 de dezembro",
+  zona: "Curitiba, Paraná — o endereço exato é enviado após a confirmação do sinal",
+  sinal: ""                       // ex.: "30%" ou "R$ 50" — deixe vazio para só dizer "sinal mínimo"
+};
+
+// estado: "disponivel" | "reservado" | "vendido"
+// fotos: lista de arquivos, ex.: ["fotos/cama-1.jpg","fotos/cama-2.jpg"] (pode ser vazia)
+const ITEMS = [
+  {nome:"Lava e seca LG DirectDrive 8,5/4 kg", categoria:"Eletrodomésticos", preco:500, estado:"reservado", fotos:["fotos/lava-seca-1.jpg","fotos/lava-seca-2.jpg","fotos/lava-seca-3.jpg"], desc:"Lava e seca LG Inverter DirectDrive, 8,5 kg para lavar e 4 kg para secar. Em ótimo funcionamento."},
+  {nome:"Micro-ondas Panasonic Dia a Dia", categoria:"Eletrodomésticos", preco:180, estado:"disponivel", fotos:["fotos/microondas-1.jpg","fotos/microondas-2.jpg","fotos/microondas-3.jpg"], desc:"Branco, com prato giratório e painel com funções automáticas. Uso doméstico, com marcas de uso."},
+  {nome:"Airfryer MP Casa", categoria:"Eletrodomésticos", preco:170, estado:"disponivel", fotos:["fotos/airfryer-1.jpg","fotos/airfryer-2.jpg","fotos/airfryer-3.jpg"], desc:"Fritadeira elétrica sem óleo, com controle de temperatura (80 a 200 °C) e timer de 30 minutos. Com marcas de uso."},
+  {nome:"Bicicleta preta com bagageiro", categoria:"Bicicletas", preco:120, estado:"disponivel", fotos:["fotos/bike-negra-1.jpg","fotos/bike-negra-2.jpg","fotos/bike-negra-3.jpg","fotos/bike-negra-4.jpg"], desc:"Câmbio funcionando perfeitamente. Acompanha suporte de celular para bicicleta e cadeado de bicicleta com chave."},
+  {nome:"Bicicleta branca e rosa Mormaii", categoria:"Bicicletas", preco:90, estado:"disponivel", fotos:["fotos/bike-branca-1.jpg"], desc:"Bicicleta com suspensão e bagageiro. Usada."},
+  {nome:"Escrivaninha de trabalho", categoria:"Escritório", preco:80, estado:"disponivel", fotos:["fotos/escrivaninha-1.jpg","fotos/escrivaninha-2.jpg"], desc:"Perfeita para uma estação de trabalho confortável. Desmontável em duas partes; para transportar é necessário um carro grande. Notebook, monitor e demais itens das fotos não estão à venda."},
+  {nome:"Monitor 19 polegadas", categoria:"Escritório", preco:75, estado:"disponivel", fotos:["fotos/monitor-1.jpg","fotos/monitor-2.jpg","fotos/monitor-3.jpg"], desc:"Monitor LED de 19 polegadas em ótimo funcionamento. Acompanha base e cabo de energia."}
+];
+/* ===== FIM ===== */
+
+const ROTULOS = {disponivel:"Reservar pelo WhatsApp", reservado:"Reservado", vendido:"Vendido"};
+document.getElementById("fecha").textContent = CONFIG.fechaRetiro;
+document.getElementById("zona").textContent = CONFIG.zona;
+document.getElementById("regla-sinal").textContent =
+  "Para reservar, é necessário um sinal mínimo" + (CONFIG.sinal ? " de " + CONFIG.sinal : "") +
+  ", confirmado pelo WhatsApp. O item só fica reservado após a confirmação do pagamento; o restante é pago na retirada.";
+
+const grid = document.getElementById("grid");
+const filters = document.getElementById("filters");
+const cats = ["Tudo", ...new Set(ITEMS.map(i => i.categoria))];
+let actual = "Tudo";
+
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+
+function render(){
+  filters.innerHTML = cats.map(c=>`<button class="${c===actual?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
+  grid.innerHTML = ITEMS.filter(i=>actual==="Tudo"||i.categoria===actual).map(i=>{
+    const msg = encodeURIComponent(`Olá! Tenho interesse em: ${i.nome} ${i.preco==null ? "" : "("+CONFIG.moeda+i.preco+")"}. Ainda está disponível?`);
+    const fotos = i.fotos || [];
+    const img = fotos.map(f=>`<img src="${esc(f)}" alt="${esc(i.nome)}" loading="lazy">`).join("") || "Sem foto";
+    const gal = fotos.length>1 ? " gal" : "";
+    const cnt = fotos.length>1 ? `<span class="count">${fotos.length} fotos · deslize</span>` : "";
+    const badge = i.estado!=="disponivel" ? `<span class="badge ${i.estado}">${i.estado.toUpperCase()}</span>` : "";
+    return `<article class="card ${i.estado}">
+      <div class="wrap"><div class="img${gal}">${img}</div>${badge}${cnt}</div>
+      <div class="body">
+        <h2>${esc(i.nome)}</h2>
+        <div class="price">${i.preco==null ? "Consulte o preço" : CONFIG.moeda+esc(i.preco)}</div>
+        <p class="desc">${esc(i.desc)}</p>
+        <a class="btn" href="https://wa.me/${CONFIG.whatsapp}?text=${msg}" target="_blank" rel="noopener">${ROTULOS[i.estado]}</a>
+      </div></article>`;
+  }).join("");
+}
+filters.addEventListener("click",e=>{if(e.target.dataset.c){actual=e.target.dataset.c;render()}});
+render();
+</script>
+</body>
+</html>
