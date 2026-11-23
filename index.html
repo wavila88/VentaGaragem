@@ -36,6 +36,7 @@
   .card.vendido .btn,.card.reservado .btn{background:var(--line);color:var(--muted);pointer-events:none}
   .card.vendido{opacity:.55}
   footer{text-align:center;color:var(--muted);font-size:.85rem;padding:0 16px 32px}
+  footer a{color:inherit;font-weight:600}
 </style>
 </head>
 <body>
@@ -53,7 +54,7 @@
   <div class="filters" id="filters"></div>
 </header>
 <main><div class="grid" id="grid"></div></main>
-<footer>Região: <span id="zona"></span></footer>
+<footer>Retirada: <span id="zona"></span> · <a id="mapa" target="_blank" rel="noopener">Ver no Google Maps</a></footer>
 
 <script>
 /* ===== EDITE AQUI ===== */
@@ -61,7 +62,8 @@ const CONFIG = {
   whatsapp: "5541999108050",      // código do país + DDD + número, sem + nem espaços
   moeda: "R$ ",
   fechaRetiro: "10 de dezembro",
-  zona: "Curitiba, Paraná — o endereço exato é enviado após a confirmação do sinal",
+  zona: "Rua Geraldinho Ramiro dos Santos, casa 302, bairro CIC, Curitiba — PR, CEP 81260-190 (em frente à Escola Sidônio Muralha)",
+  mapa: "https://www.google.com/maps/search/?api=1&query=Rua+Geraldinho+Ramiro+dos+Santos+302+CIC+Curitiba+PR+81260190",
   sinal: ""                       // ex.: "30%" ou "R$ 50" — deixe vazio para só dizer "sinal mínimo"
 };
 
@@ -82,6 +84,7 @@ const ITEMS = [
 const ROTULOS = {disponivel:"Reservar pelo WhatsApp", reservado:"Reservado", vendido:"Vendido"};
 document.getElementById("fecha").textContent = CONFIG.fechaRetiro;
 document.getElementById("zona").textContent = CONFIG.zona;
+document.getElementById("mapa").href = CONFIG.mapa;
 document.getElementById("regla-sinal").textContent =
   "Para reservar, é necessário um sinal mínimo" + (CONFIG.sinal ? " de " + CONFIG.sinal : "") +
   ", confirmado pelo WhatsApp. O item só fica reservado após a confirmação do pagamento; o restante é pago na retirada.";
