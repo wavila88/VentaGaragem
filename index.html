@@ -18,6 +18,7 @@
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
   .filters button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 14px;border-radius:99px;cursor:pointer;font:inherit;font-size:.9rem}
   .filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .filters .solo{margin-left:auto;border-style:dashed}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding-bottom:40px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
   .wrap{position:relative}
@@ -103,12 +104,14 @@ const grid = document.getElementById("grid");
 const filters = document.getElementById("filters");
 const cats = ["Tudo", ...new Set(ITEMS.map(i => i.categoria))];
 let actual = "Tudo";
+let soDisp = false;
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 function render(){
-  filters.innerHTML = cats.map(c=>`<button class="${c===actual?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
-  grid.innerHTML = ITEMS.filter(i=>actual==="Tudo"||i.categoria===actual).map(i=>{
+  filters.innerHTML = cats.map(c=>`<button class="${c===actual?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("") +
+    `<button class="solo${soDisp?" on":""}" data-disp="1" aria-pressed="${soDisp}">Só disponíveis</button>`;
+  grid.innerHTML = ITEMS.filter(i=>(actual==="Tudo"||i.categoria===actual)&&(!soDisp||i.estado==="disponivel")).map(i=>{
     const msg = encodeURIComponent(`Olá! Tenho interesse em: ${i.nome} ${i.preco==null ? "" : "("+CONFIG.moeda+i.preco+")"}. Ainda está disponível?`);
     const fotos = i.fotos || [];
     const img = fotos.map(f=>`<img src="${esc(f)}" alt="${esc(i.nome)}" loading="lazy">`).join("") || "Sem foto";
@@ -125,7 +128,10 @@ function render(){
       </div></article>`;
   }).join("");
 }
-filters.addEventListener("click",e=>{if(e.target.dataset.c){actual=e.target.dataset.c;render()}});
+filters.addEventListener("click",e=>{
+  if(e.target.dataset.disp){soDisp=!soDisp;render()}
+  else if(e.target.dataset.c){actual=e.target.dataset.c;render()}
+});
 render();
 </script>
 </body>
