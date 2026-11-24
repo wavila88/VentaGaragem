@@ -18,6 +18,7 @@
   .filters{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
   .filters button{border:1px solid var(--line);background:var(--card);color:var(--text);padding:6px 14px;border-radius:99px;cursor:pointer;font:inherit;font-size:.9rem}
   .filters button.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .filters .solo{border-style:dashed}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding-bottom:40px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
   .wrap{position:relative}
@@ -36,6 +37,7 @@
   .card.vendido .btn,.card.reservado .btn{background:var(--line);color:var(--muted);pointer-events:none}
   .card.vendido{opacity:.55}
   footer{text-align:center;color:var(--muted);font-size:.85rem;padding:0 16px 32px}
+  footer a{color:inherit;font-weight:600}
 </style>
 </head>
 <body>
@@ -47,13 +49,13 @@
     <ul>
       <li>Chame no WhatsApp para reservar o item.</li>
       <li id="regla-sinal"></li>
-      <li>A retirada é por conta do comprador (móveis grandes são desmontados no local).</li>
+      <li>A retirada é por conta do comprador.</li>
     </ul>
   </div>
   <div class="filters" id="filters"></div>
 </header>
 <main><div class="grid" id="grid"></div></main>
-<footer>Região: <span id="zona"></span></footer>
+<footer>Retirada: <span id="zona"></span> · <a id="mapa" target="_blank" rel="noopener">Ver no Google Maps</a></footer>
 
 <script>
 /* ===== EDITE AQUI ===== */
@@ -61,7 +63,8 @@ const CONFIG = {
   whatsapp: "5541999108050",      // código do país + DDD + número, sem + nem espaços
   moeda: "R$ ",
   fechaRetiro: "10 de dezembro",
-  zona: "Curitiba, Paraná — o endereço exato é enviado após a confirmação do sinal",
+  zona: "Rua Geraldinho Ramiro dos Santos, casa 302, bairro CIC, Curitiba — PR, CEP 81260-190 (em frente à Escola Sidônio Muralha)",
+  mapa: "https://maps.app.goo.gl/GwNDGn9geqrhDYEj7",
   sinal: ""                       // ex.: "30%" ou "R$ 50" — deixe vazio para só dizer "sinal mínimo"
 };
 
@@ -73,14 +76,26 @@ const ITEMS = [
   {nome:"Airfryer MP Casa", categoria:"Eletrodomésticos", preco:120, estado:"disponivel", fotos:["fotos/airfryer-1.jpg","fotos/airfryer-2.jpg","fotos/airfryer-3.jpg"], desc:"Fritadeira elétrica sem óleo, com controle de temperatura (80 a 200 °C) e timer de 30 minutos. Com marcas de uso."},
   {nome:"Bicicleta preta com bagageiro", categoria:"Bicicletas", preco:120, estado:"disponivel", fotos:["fotos/bike-negra-1.jpg","fotos/bike-negra-2.jpg","fotos/bike-negra-3.jpg","fotos/bike-negra-4.jpg"], desc:"Câmbio funcionando perfeitamente. Acompanha suporte de celular para bicicleta e cadeado de bicicleta com chave."},
   {nome:"Bicicleta branca e rosa Mormaii", categoria:"Bicicletas", preco:90, estado:"disponivel", fotos:["fotos/bike-branca-1.jpg"], desc:"Bicicleta com suspensão e bagageiro. Usada."},
-  {nome:"Escrivaninha de trabalho", categoria:"Escritório", preco:80, estado:"disponivel", fotos:["fotos/escrivaninha-1.jpg","fotos/escrivaninha-2.jpg"], desc:"Perfeita para uma estação de trabalho confortável. Desmontável em duas partes; para transportar é necessário um carro grande. Notebook, monitor e demais itens das fotos não estão à venda."},
-  {nome:"Monitor 19 polegadas", categoria:"Escritório", preco:75, estado:"disponivel", fotos:["fotos/monitor-1.jpg","fotos/monitor-2.jpg","fotos/monitor-3.jpg"], desc:"Monitor LED de 19 polegadas em ótimo funcionamento. Acompanha base e cabo de energia."}
+  {nome:"Escrivaninha de trabalho com cadeira de escritório", categoria:"Escritório", preco:80, estado:"reservado", fotos:["fotos/escrivaninha-1.jpg","fotos/escrivaninha-2.jpg","fotos/cadeira-escritorio-1.jpg"], desc:"Acompanha cadeira de escritório com encosto em tela roxa, assento preto, braços e base cromada com rodízios. Perfeita para uma estação de trabalho confortável. Desmontável em duas partes; para transportar é necessário um carro grande. Notebook, monitor e demais itens das fotos não estão à venda."},
+  {nome:"Monitor 19 polegadas", categoria:"Eletrodomésticos", preco:75, estado:"disponivel", fotos:["fotos/monitor-1.jpg","fotos/monitor-2.jpg","fotos/monitor-3.jpg"], desc:"Monitor LED de 19 polegadas em ótimo funcionamento. Acompanha base e cabo de energia."},
+  {nome:"Multiprocessador e Liquidificador Philco PMP1600P 9 em 1 (1700W)", categoria:"Eletrodomésticos", preco:189, estado:"disponivel", fotos:["fotos/multiprocessador-1.jpg","fotos/multiprocessador-2.jpg","fotos/multiprocessador-3.jpg","fotos/multiprocessador-4.jpg"], desc:"Multiprocessador e liquidificador Philco PMP1600P, 1700 W, 9 em 1: processa, rala, corta, mistura, fatia, espreme, pica e liquidifica. Jarra do processador de 2,1 L e copo do liquidificador de 3,2 L (útil 1,7 L). 2 velocidades + pulsar, trava de segurança, pés antiderrapantes e design vertical. Acompanha copo do liquidificador, jarra do multiprocessador, espremedor de frutas, adaptador de lâminas, lâmina de fatiar, lâmina de ralar, 2 lâminas de processar, batedor e emulsificador. Acessórios podem ir à lava-louças. Usado, com marcas de uso."},
+  {nome:"Armário pequeno com 2 portas e 2 gavetas", categoria:"Armários", preco:50, estado:"disponivel", fotos:["fotos/armario-1.jpg","fotos/armario-2.jpg","fotos/armario-3.jpg","fotos/armario-4.jpg","fotos/armario-5.jpg","fotos/armario-6.jpg","fotos/armario-7.jpg"], desc:"Armário em excelente estado, com duas portas, prateleira, espaço para cabides e duas gavetas. Medidas: 1,71 m de altura e 62 cm de largura. Entregue montado; a retirada é no endereço e o comprador se encarrega do transporte."},
+  {nome:"Escrivaninha feminina com estante e 2 gavetas (branca e rosa)", categoria:"Escritório", preco:89, estado:"reservado", fotos:["fotos/escrivaninha-feminina-1.jpg","fotos/escrivaninha-feminina-2.jpg","fotos/escrivaninha-feminina-3.jpg","fotos/escrivaninha-feminina-4.jpg","fotos/escrivaninha-feminina-5.jpg"], desc:"Escrivaninha branca com detalhes em rosa, ideal para quarto de menina ou jovem. Tem bancada ampla, estante lateral com nichos e prateleiras rosa, e duas gavetas. Medidas aproximadas: 1,31 m de largura, 1,36 m de altura e 37 cm de profundidade; bancada a 74 cm do chão. Usada, com marcas de uso. Não fazemos desmontagem nem entrega: o comprador retira no endereço e leva o móvel."},
+  {nome:"Escrivaninha branca com estante e 2 gavetas", categoria:"Escritório", preco:89, estado:"disponivel", fotos:["fotos/escrivaninha-branca-1.jpg","fotos/escrivaninha-branca-2.jpg","fotos/escrivaninha-branca-3.jpg","fotos/escrivaninha-branca-4.jpg","fotos/escrivaninha-branca-5.jpg"], desc:"Escrivaninha toda branca, com bancada ampla, estante lateral com nichos e prateleiras, e duas gavetas. Medidas aproximadas: 1,31 m de largura, 1,36 m de altura e 37 cm de profundidade; bancada a 74 cm do chão. Usada, com marcas de uso. Não fazemos desmontagem nem entrega: o comprador retira no endereço e leva o móvel."},
+  {nome:"Armário grande com 4 portas e 2 gavetas", categoria:"Armários", preco:79, estado:"reservado", fotos:["fotos/armario-grande-1.jpg","fotos/armario-grande-2.jpg","fotos/armario-grande-3.jpg","fotos/armario-grande-4.jpg","fotos/armario-grande-5.jpg","fotos/armario-grande-6.jpg"], desc:"Armário grande e completo, em branco com acabamento marrom, com 4 portas e 2 gavetas. Por dentro tem barras para cabides e prateleiras. Medidas aproximadas: 1,85 m de altura e 1,05 m de largura. Usado, com marcas de uso. Não fazemos desmontagem nem entrega: o comprador retira no endereço e leva o móvel."},
+  {nome:"Secador de cabelo preto", categoria:"Eletrodomésticos", preco:50, estado:"reservado", fotos:["fotos/secador-1.jpg","fotos/secador-2.jpg","fotos/secador-3.jpg"], desc:"Secador de cabelo preto com detalhe prateado e cabo longo. Voltagem 127 V. Usado, com marcas de uso."},
+  {nome:"Cama box casal com colchão integrado e edredom", categoria:"Camas", preco:120, estado:"disponivel", fotos:["fotos/cama-3.jpg","fotos/cama-4.jpg","fotos/cama-5.jpg","fotos/cama-1.jpg","fotos/cama-2.jpg","fotos/cama-6.jpg","fotos/cama-7.jpg"], desc:"Cama box casal com colchão integrado, em tecido floral escuro, sobre pés de madeira. Acompanha edredom rosa. Medidas aproximadas: 1,94 m de comprimento e 1,40 m de largura. Usada, com marcas de uso. Não fazemos desmontagem nem entrega: o comprador retira no endereço e leva o móvel."},
+  {nome:"Cama box casal com colchão integrado e edredom verde-azulado", categoria:"Camas", preco:120, estado:"disponivel", fotos:["fotos/cama2-3.jpg","fotos/cama2-4.jpg","fotos/cama2-1.jpg","fotos/cama2-2.jpg"], desc:"Cama box casal com colchão integrado, em tecido floral escuro, sobre pés de madeira. Acompanha edredom verde-azulado escuro. Medidas aproximadas: 1,90 m de comprimento e 1,40 m de largura. Usada, com marcas de uso. Não fazemos desmontagem nem entrega: o comprador retira no endereço e leva o móvel."},
+  {nome:"Mosquiteiro portátil dobrável para cama", categoria:"Casa", preco:49, estado:"disponivel", fotos:["fotos/mosquiteiro-1.jpg","fotos/mosquiteiro-2.jpg","fotos/mosquiteiro-3.jpg"], desc:"Mosquiteiro para cama portátil, tipo tenda protetora contra mosquitos e pernilongos, dobrável (rede mosquiteira). Cor branca com detalhes azuis. Medidas: 165 x 190 x 80 cm."},
+  {nome:"Geladeira Continental Copacabana duplex (1,70 m)", categoria:"Eletrodomésticos", preco:230, estado:"reservado", fotos:["fotos/geladeira-1.jpg","fotos/geladeira-2.jpg","fotos/geladeira-3.jpg","fotos/geladeira-4.jpg","fotos/geladeira-5.jpg"], desc:"Geladeira Continental Copacabana duplex (freezer em cima), cor prata, com 1,70 m de altura e voltagem 110 V. Por dentro tem prateleiras, gaveta de legumes e prateleiras na porta. Usada, com marcas de uso. Não fazemos entrega: o comprador retira no endereço e leva o eletrodoméstico."},
+  {nome:"Ferro a vapor Arno Essentialgliss", categoria:"Eletrodomésticos", preco:50, estado:"disponivel", fotos:["fotos/ferro-1.jpg","fotos/ferro-2.jpg","fotos/ferro-3.jpg"], desc:"Ferro a vapor Arno Essentialgliss, branco e rosa, com função Boost de vapor e sistema anti-calcário. Voltagem 127 V e potência de 1200 W. Usado, com marcas de uso."}
 ];
 /* ===== FIM ===== */
 
 const ROTULOS = {disponivel:"Reservar pelo WhatsApp", reservado:"Reservado", vendido:"Vendido"};
 document.getElementById("fecha").textContent = CONFIG.fechaRetiro;
 document.getElementById("zona").textContent = CONFIG.zona;
+document.getElementById("mapa").href = CONFIG.mapa;
 document.getElementById("regla-sinal").textContent =
   "Para reservar, é necessário um sinal mínimo" + (CONFIG.sinal ? " de " + CONFIG.sinal : "") +
   ", confirmado pelo WhatsApp. O item só fica reservado após a confirmação do pagamento; o restante é pago na retirada.";
@@ -89,12 +104,14 @@ const grid = document.getElementById("grid");
 const filters = document.getElementById("filters");
 const cats = ["Tudo", ...new Set(ITEMS.map(i => i.categoria))];
 let actual = "Tudo";
+let soDisp = false;
 
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 function render(){
-  filters.innerHTML = cats.map(c=>`<button class="${c===actual?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("");
-  grid.innerHTML = ITEMS.filter(i=>actual==="Tudo"||i.categoria===actual).map(i=>{
+  filters.innerHTML = cats.map(c=>`<button class="${c===actual?"on":""}" data-c="${esc(c)}">${esc(c)}</button>`).join("") +
+    `<button class="solo${soDisp?" on":""}" data-disp="1" aria-pressed="${soDisp}">Só disponíveis</button>`;
+  grid.innerHTML = ITEMS.filter(i=>(actual==="Tudo"||i.categoria===actual)&&(!soDisp||i.estado==="disponivel")).map(i=>{
     const msg = encodeURIComponent(`Olá! Tenho interesse em: ${i.nome} ${i.preco==null ? "" : "("+CONFIG.moeda+i.preco+")"}. Ainda está disponível?`);
     const fotos = i.fotos || [];
     const img = fotos.map(f=>`<img src="${esc(f)}" alt="${esc(i.nome)}" loading="lazy">`).join("") || "Sem foto";
@@ -111,7 +128,10 @@ function render(){
       </div></article>`;
   }).join("");
 }
-filters.addEventListener("click",e=>{if(e.target.dataset.c){actual=e.target.dataset.c;render()}});
+filters.addEventListener("click",e=>{
+  if(e.target.dataset.disp){soDisp=!soDisp;render()}
+  else if(e.target.dataset.c){actual=e.target.dataset.c;render()}
+});
 render();
 </script>
 </body>
